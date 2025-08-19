@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mint Fireworks with Starry Sky</title>
+<style>
+  body {
+    margin: 0;
+    background: rgb(77, 75, 75); /* deep night sky */
+    overflow: hidden;
+  }
+  #name {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5rem;
+    z-index: 2;
+    white-space: nowrap;
+    animation: glow 1.5s infinite alternate;
+    color: white;
+    text-align: center;
+  }
+  @keyframes glow {
+    0% { text-shadow: 0 0 5px #fff, 0 0 10px rgb(84, 78, 78), 0 0 20px #aaa; filter: brightness(1); }
+    100% { text-shadow: 0 0 15px #fff, 0 0 30px #54514f, 0 0 60px #5e5c5b; filter: brightness(1.5); }
+  }
+  #test-btn {
+    position: absolute;
+    top: calc(50% + 80px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: 1rem;
+    padding: 0.6em 1.2em;
+    background: rgb(128, 123, 123);
+    border: none;
+    border-radius: 10px;
+    color: #222;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #5558;
+    font-weight: bold;
+    transition: background 0.3s, color 0.3s;
+  }
+  #test-btn:active {
+    background: rgb(145, 139, 139);
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+<!-- 🎵 Background Music -->
+<audio id="bg-music" autoplay loop hidden>
+  <source src="gerr.mp3" type="audio/mpeg">
+</audio>
+
+<div id="name">NK </div>
+<button id="test-btn">Press</button>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let stars = [];
+let fireworks = [];
+let mintEmoji = "💪🏼😎✌🏻🫡"; 
+
+// 🎶 Music on first click
+const bgMusic = document.getElementById("bg-music");
+let musicStarted = false;
+function startMusic() {
+  if (!musicStarted) {
+    bgMusic.play().catch(() => {}); 
+    musicStarted = true;
+  }
+}
+
+// 🎵 Test Play Music button (most reliable for iPhone Safari)
+document.getElementById("test-btn").addEventListener("click", function() {
+  bgMusic.play().catch(()=>{});
+  musicStarted = true;
+});
+
+// 🌌 Sparkly ✦ Stars (different sizes & glow)
+function createStars() {
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 0.5,  // size variation
+      alpha: Math.random(),
+      twinkleSpeed: 0.01 + Math.random() * 0.02
+    });
+  }
+}
+
+function drawStars() {
+  for (let s of stars) {
+    ctx.save();
+    ctx.globalAlpha = s.alpha;
+
+    // ✦ Draw glow + cross flare (like real twinkling stars)
+    let gradient = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 4);
+    gradient.addColorStop(0, "white");
+    gradient.addColorStop(0.2, "rgba(255,255,255,0.8)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ✦ Little sparkle rays
+    ctx.strokeStyle = "rgba(255,255,255," + s.alpha + ")";
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(s.x - s.size * 3, s.y);
+    ctx.lineTo(s.x + s.size * 3, s.y);
+    ctx.moveTo(s.x, s.y - s.size * 3);
+    ctx.lineTo(s.x, s.y + s.size * 3);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Twinkle effect
+    s.alpha += s.twinkleSpeed * (Math.random() > 0.5 ? 1 : -1);
+    if (s.alpha < 0.2) s.alpha = 0.2;
+    if (s.alpha > 1) s.alpha = 1;
+  }
+}
+
+// 🎆 Fireworks
+function createFirework(x, y) {
+  for (let i = 0; i < 40; i++) {
+    fireworks.push({
+      x: x,
+      y: y,
+      vx: Math.cos(i * (Math.PI * 2 / 40)) * (Math.random() * 3 + 2),
+      vy: Math.sin(i * (Math.PI * 2 / 40)) * (Math.random() * 3 + 2),
+      alpha: 1,
+      size: 30
+    });
+  }
+}
+
+function drawFireworks() {
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    let f = fireworks[i];
+    ctx.globalAlpha = f.alpha;
+    ctx.font = f.size + "px serif";
+    ctx.shadowColor = "white";
+    ctx.shadowBlur = 15;
+    ctx.fillText(mintEmoji, f.x, f.y);
+    f.x += f.vx;
+    f.y += f.vy;
+    f.alpha -= 0.02;
+    f.size -= 0.2;
+    if (f.alpha <= 0) fireworks.splice(i, 1);
+  }
+}
+
+// 🎞 Animation
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawStars();
+  drawFireworks();
+  requestAnimationFrame(animate);
+}
+
+// 🎇 Events
+canvas.addEventListener("click", (e) => {
+  startMusic();
+  createFirework(e.clientX, e.clientY);
+});
+
+setInterval(() => {
+  if (fireworks.length === 0) {
+    const nameElement = document.getElementById("name");
+    const rect = nameElement.getBoundingClientRect();
+    createFirework(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }
+}, 2500);
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = [];
+  createStars();
+});
+
+createStars();
+animate();
+</script>
+</body>
+</html>
